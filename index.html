@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1f6b52">
+<title>Calculs Spiruline</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  :root {
+    --bg: #f4f7f5; --card: #ffffff; --text: #17241f; --muted: #5d6e67;
+    --accent: #1f6b52; --accent-text: #ffffff; --border: #d6e0db;
+    --warn-bg: #fff4e0; --warn-text: #7a4b00; --err-bg: #fde8e8; --err-text: #8a1c1c;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1714; --card: #18231f; --text: #e5eee9; --muted: #9cb0a7;
+      --accent: #4fbf94; --accent-text: #08130f; --border: #2a3a33;
+      --warn-bg: #3a2b10; --warn-text: #ffd48a; --err-bg: #3d1818; --err-text: #ffb3b3;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  header {
+    position: sticky; top: 0; z-index: 2; background: var(--accent); color: var(--accent-text);
+    padding: calc(12px + env(safe-area-inset-top)) 16px 0;
+  }
+  header h1 { margin: 0 0 10px; font-size: 1.15rem; }
+  nav { display: flex; gap: 4px; overflow-x: auto; }
+  nav button {
+    flex: 0 0 auto; border: 0; background: transparent; color: inherit; opacity: .75;
+    padding: 10px 14px; font: inherit; font-weight: 600; border-bottom: 3px solid transparent;
+  }
+  nav button[aria-selected="true"] { opacity: 1; border-bottom-color: currentColor; }
+  main { max-width: 640px; margin: 0 auto; padding: 16px; }
+  section[hidden] { display: none; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+  .card h2 { margin: 0 0 12px; font-size: 1rem; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .grid.g4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  label { display: block; font-size: .85rem; color: var(--muted); margin-bottom: 4px; }
+  input, select {
+    width: 100%; padding: 10px; font: inherit; color: var(--text); background: var(--bg);
+    border: 1px solid var(--border); border-radius: 8px;
+  }
+  input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  input.invalide { border-color: var(--err-text); }
+  .field + .field { margin-top: 12px; }
+  .hint { font-size: .8rem; color: var(--muted); margin-top: 4px; }
+  .btn {
+    display: block; width: 100%; padding: 14px; border: 0; border-radius: 10px;
+    background: var(--accent); color: var(--accent-text); font: inherit; font-weight: 700; font-size: 1.05rem;
+  }
+  .btn.secondaire { background: transparent; color: var(--accent); border: 1px solid var(--accent); margin-top: 10px; }
+  table { width: 100%; border-collapse: collapse; }
+  td { padding: 8px 0; border-bottom: 1px solid var(--border); }
+  td.v { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; white-space: nowrap; }
+  td.u { color: var(--muted); padding-left: 6px; width: 3.5em; font-size: .85rem; }
+  tr:last-child td { border-bottom: 0; }
+  .msg { padding: 10px 12px; border-radius: 8px; margin-bottom: 12px; }
+  .msg.warn { background: var(--warn-bg); color: var(--warn-text); }
+  .msg.err { background: var(--err-bg); color: var(--err-text); }
+  .big { font-size: 1.6rem; font-weight: 800; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Calculs Spiruline</h1>
+  <nav role="tablist">
+    <button role="tab" data-tab="medfeed" aria-selected="true">Milieu &amp; nourriture</button>
+    <button role="tab" data-tab="deltaph" aria-selected="false">Modifier le pH</button>
+  </nav>
+</header>
+
+<main>
+  <!-- MEDFEED (9 cas) -->
+  <section id="medfeed">
+    <div class="card">
+      <label for="cas">Type de milieu</label>
+      <select id="cas"></select>
+      <div class="hint" id="cas-desc"></div>
+    </div>
+    <form id="f-medfeed" novalidate>
+      <div id="champs"></div>
+      <button class="btn" type="submit">Calculer</button>
+      <button class="btn secondaire" type="button" id="defauts">Remettre les valeurs par défaut</button>
+    </form>
+    <div id="r-medfeed" style="margin-top:16px"></div>
+  </section>
+
+  <!-- DeltapH -->
+  <section id="deltaph" hidden>
+    <form id="f-deltaph" novalidate>
+      <div class="card">
+        <h2>Milieu actuel</h2>
+        <div class="field"><label for="concInitiale">Bicarbonate + carbonate de sodium (g/l)</label><input id="concInitiale" inputmode="decimal" value="8,0"></div>
+        <div class="grid" style="margin-top:12px">
+          <div><label for="phInitial">pH initial</label><input id="phInitial" inputmode="decimal" value="8,5"></div>
+          <div><label for="phFinal">pH souhaité</label><input id="phFinal" inputmode="decimal" value="10"></div>
+        </div>
+        <div class="hint">pH entre 8,2 et 11,3.</div>
+      </div>
+      <div class="card">
+        <h2>Produit</h2>
+        <div class="field"><label for="produitBaisse">Pour abaisser le pH</label><select id="produitBaisse"></select></div>
+        <div class="field"><label for="produitHausse">Pour élever le pH</label><select id="produitHausse"></select></div>
+      </div>
+      <button class="btn" type="submit">Calculer</button>
+    </form>
+    <div id="r-deltaph" style="margin-top:16px"></div>
+  </section>
+  <p class="hint" style="text-align:center;margin-top:24px">D'après les logiciels MEDFEED et DeltapH diffusés gratuitement par les Petites Nouvelles de la spiruline (usage non commercial, sans garantie).</p>
+</main>
+
+<script type="module">
+import { deltaPh, PRODUITS_BAISSE, PRODUITS_HAUSSE } from "./calculs.js";
+import { CAS } from "./cas/index.js";
+
+const $ = (id) => document.getElementById(id);
+const fmt = (n) => n.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+
+function remplir(id, options) {
+  $(id).innerHTML = options.map((o, i) => `<option value="${i}">${esc(o)}</option>`).join("");
+}
+remplir("produitBaisse", PRODUITS_BAISSE);
+remplir("produitHausse", PRODUITS_HAUSSE);
+
+// Accepte la virgule ou le point comme séparateur décimal.
+function lire(ids) {
+  const valeurs = {};
+  let ok = true;
+  for (const id of ids) {
+    const el = $(id);
+    const n = Number(el.value.trim().replace(/\s/g, "").replace(",", "."));
+    const valide = el.value.trim() !== "" && Number.isFinite(n);
+    el.classList.toggle("invalide", !valide);
+    if (!valide) ok = false;
+    valeurs[id] = n;
+  }
+  return ok ? valeurs : null;
+}
+
+function tableau(lignes) {
+  return `<table>${lignes.map(([l, v, u]) =>
+    `<tr><td>${esc(l)}</td><td class="v">${fmt(v)}</td><td class="u">${u}</td></tr>`).join("")}</table>`;
+}
+
+function texteResultats(titre, blocs) {
+  return [titre, ...blocs.flatMap(([t, lignes]) => ["", t, ...lignes.map(([l, v, u]) => `${l} : ${fmt(v)} ${u}`)])].join("\n");
+}
+
+function boutonPartager(conteneur, texte) {
+  const btn = document.createElement("button");
+  btn.className = "btn secondaire";
+  btn.textContent = navigator.share ? "Partager les résultats" : "Copier les résultats";
+  btn.onclick = async () => {
+    try {
+      if (navigator.share) await navigator.share({ title: "Calculs Spiruline", text: texte });
+      else { await navigator.clipboard.writeText(texte); btn.textContent = "Copié ✓"; }
+    } catch { /* partage annulé */ }
+  };
+  conteneur.appendChild(btn);
+}
+
+// Onglets
+document.querySelectorAll("nav button").forEach((b) => b.addEventListener("click", () => {
+  document.querySelectorAll("nav button").forEach((x) => x.setAttribute("aria-selected", x === b));
+  document.querySelectorAll("main section").forEach((s) => (s.hidden = s.id !== b.dataset.tab));
+  try { localStorage.setItem("onglet", b.dataset.tab); } catch {}
+}));
+try {
+  const o = localStorage.getItem("onglet");
+  if (o) document.querySelector(`nav button[data-tab="${o}"]`)?.click();
+} catch {}
+
+// ---- MEDFEED : formulaire généré selon le cas choisi ----
+let cas = CAS[0];
+const stocker = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+const charger = (k) => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } };
+
+$("cas").innerHTML = CAS.map((c, i) => `<option value="${i}">${i + 1}. ${esc(c.titre)}</option>`).join("");
+
+function construireFormulaire(valeurs) {
+  const v = valeurs || {};
+  const groupes = cas.groupes.map((g) => {
+    const champs = g.champs.map((c) => {
+      const val = v[c.id] ?? c.defaut;
+      const html = `<label for="m-${c.id}">${esc(c.label)}</label><input id="m-${c.id}" inputmode="decimal" value="${esc(val)}">` +
+        (c.aide ? `<div class="hint">${esc(c.aide)}</div>` : "");
+      return `<div>${html}</div>`;
+    }).join("");
+    return `<div class="card"><h2>${esc(g.titre)}</h2>` +
+      (g.aide ? `<div class="hint" style="margin:-6px 0 10px">${esc(g.aide)}</div>` : "") +
+      `<div class="grid${g.colonnes === 4 ? " g4" : ""}">${champs}</div></div>`;
+  }).join("");
+  const listes = (cas.listes || []).length ? `<div class="card"><h2>Produits</h2>${cas.listes.map((l) =>
+    `<div class="field"><label for="m-${l.id}">${esc(l.label)}</label><select id="m-${l.id}">` +
+    l.options.map((o, i) => `<option value="${i}"${Number(v[l.id] ?? 0) === i ? " selected" : ""}>${esc(o)}</option>`).join("") +
+    `</select>${l.aide ? `<div class="hint">${esc(l.aide)}</div>` : ""}</div>`).join("")}</div>` : "";
+  $("champs").innerHTML = groupes + listes;
+  $("cas-desc").textContent = cas.description || "";
+  $("r-medfeed").innerHTML = "";
+}
+
+function saisieActuelle() {
+  const brut = {};
+  cas.groupes.forEach((g) => g.champs.forEach((c) => (brut[c.id] = $("m-" + c.id).value)));
+  (cas.listes || []).forEach((l) => (brut[l.id] = Number($("m-" + l.id).value)));
+  return brut;
+}
+
+function choisirCas(i) {
+  cas = CAS[i] || CAS[0];
+  $("cas").value = CAS.indexOf(cas);
+  stocker("cas", cas.id);
+  construireFormulaire(charger("saisie:" + cas.id));
+}
+
+$("cas").addEventListener("change", (e) => choisirCas(Number(e.target.value)));
+$("defauts").addEventListener("click", () => { stocker("saisie:" + cas.id, null); construireFormulaire(null); });
+choisirCas(Math.max(0, CAS.findIndex((c) => c.id === charger("cas"))));
+
+$("f-medfeed").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const out = $("r-medfeed");
+  const brut = saisieActuelle();
+  stocker("saisie:" + cas.id, brut);
+  const ids = cas.groupes.flatMap((g) => g.champs.map((c) => "m-" + c.id));
+  const nums = lire(ids);
+  if (!nums) { out.innerHTML = `<div class="msg err">Vérifiez les champs en rouge (nombre attendu).</div>`; return; }
+  const v = {};
+  for (const [k, n] of Object.entries(nums)) v[k.slice(2)] = n;
+  (cas.listes || []).forEach((l) => (v[l.id] = brut[l.id]));
+  const r = cas.calculer(v);
+  if (r.erreur) { out.innerHTML = `<div class="msg err">${esc(r.erreur)}</div>`; return; }
+  out.innerHTML =
+    (r.avertissements || []).map((a) => `<div class="msg warn">${esc(a)}</div>`).join("") +
+    `<div class="card"><h2>Milieu de culture (hors oligo-éléments)</h2>${tableau(r.milieu)}</div>` +
+    `<div class="card"><h2>Nourriture (hors oligo-éléments)</h2>${tableau(r.nourriture)}</div>`;
+  boutonPartager(out, texteResultats(`MEDFEED – ${cas.titre}`, [["MILIEU DE CULTURE", r.milieu], ["NOURRITURE", r.nourriture]]));
+  out.scrollIntoView({ behavior: "smooth" });
+});
+
+$("f-deltaph").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const out = $("r-deltaph");
+  const v = lire(["concInitiale", "phInitial", "phFinal"]);
+  if (!v) { out.innerHTML = `<div class="msg err">Vérifiez les champs en rouge (nombre attendu).</div>`; return; }
+  const horsBornes = [v.phInitial, v.phFinal].some((p) => p < 8.2 || p > 11.3);
+  v.produitBaisse = Number($("produitBaisse").value);
+  v.produitHausse = Number($("produitHausse").value);
+  const r = deltaPh(v);
+  const lignes = [
+    ["Alcalinité initiale", r.alcaliniteInitiale, "mol/l"],
+    ["Alcalinité finale", r.alcaliniteFinale, "mol/l"],
+  ];
+  out.innerHTML =
+    (horsBornes ? `<div class="msg warn">pH hors de la plage prévue (8,2 – 11,3) : résultat peu fiable.</div>` : "") +
+    `<div class="card"><h2>${esc(r.produit)} à ajouter</h2><div class="big">${fmt(r.ajout)} g/l</div></div>` +
+    `<div class="card">${tableau(lignes)}</div>`;
+  boutonPartager(out, texteResultats("Modification du pH", [[`${r.produit} : ${fmt(r.ajout)} g/l`, lignes]]));
+  out.scrollIntoView({ behavior: "smooth" });
+});
+
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+</script>
+</body>
+</html>
