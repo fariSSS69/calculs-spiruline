@@ -1,5 +1,5 @@
 // Cache hors ligne : changer VERSION à chaque mise à jour des fichiers.
-const VERSION = "v2";
+const VERSION = "v3";
 const FICHIERS = [
   "./", "index.html", "calculs.js", "manifest.json", "icon-192.png", "icon-512.png",
   "cas/index.js", ...[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => `cas/medfeed${n}.js`),

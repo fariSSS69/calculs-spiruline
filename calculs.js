@@ -63,3 +63,16 @@ export function deltaPh({ concInitiale, phInitial, phFinal, produitBaisse, produ
   }
   return { alcaliniteInitiale: bi, ajout, alcaliniteFinale: bf, produit };
 }
+
+// pHexC : inverse de cDepuisPh (fonction continue et strictement décroissante), par dichotomie.
+// Renvoie null si C est hors de la plage couverte (pH 6 à 13).
+export function phDepuisC(c) {
+  let bas = 6, haut = 13;
+  if (!(c <= cDepuisPh(bas) && c >= cDepuisPh(haut))) return null;
+  for (let i = 0; i < 60; i++) {
+    const milieu = (bas + haut) / 2;
+    if (cDepuisPh(milieu) > c) bas = milieu;
+    else haut = milieu;
+  }
+  return (bas + haut) / 2;
+}

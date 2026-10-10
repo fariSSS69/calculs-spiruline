@@ -75,6 +75,7 @@
   <nav role="tablist">
     <button role="tab" data-tab="medfeed" aria-selected="true">Milieu &amp; nourriture</button>
     <button role="tab" data-tab="deltaph" aria-selected="false">Modifier le pH</button>
+    <button role="tab" data-tab="phexc" aria-selected="false">pH ↔ C</button>
   </nav>
 </header>
 
@@ -115,11 +116,24 @@
     </form>
     <div id="r-deltaph" style="margin-top:16px"></div>
   </section>
+  <!-- pHexC -->
+  <section id="phexc" hidden>
+    <div class="card">
+      <h2>pH ↔ C</h2>
+      <p class="hint" style="margin-top:0">C est le rapport molaire CO2/NaOH dans le milieu de culture. Remplissez l'une des deux cases : l'autre se calcule automatiquement.</p>
+      <div class="grid">
+        <div><label for="x-ph">pH</label><input id="x-ph" inputmode="decimal" value="9,6"></div>
+        <div><label for="x-c">C (CO2/NaOH)</label><input id="x-c" inputmode="decimal"></div>
+      </div>
+      <div id="r-phexc" style="margin-top:12px"></div>
+    </div>
+  </section>
+
   <p class="hint" style="text-align:center;margin-top:24px">D'après les logiciels MEDFEED et DeltapH diffusés gratuitement par les Petites Nouvelles de la spiruline (usage non commercial, sans garantie).</p>
 </main>
 
 <script type="module">
-import { deltaPh, PRODUITS_BAISSE, PRODUITS_HAUSSE } from "./calculs.js";
+import { deltaPh, cDepuisPh, phDepuisC, PRODUITS_BAISSE, PRODUITS_HAUSSE } from "./calculs.js";
 import { CAS } from "./cas/index.js";
 
 const $ = (id) => document.getElementById(id);
@@ -268,6 +282,31 @@ $("f-deltaph").addEventListener("submit", (e) => {
   boutonPartager(out, texteResultats("Modification du pH", [[`${r.produit} : ${fmt(r.ajout)} g/l`, lignes]]));
   out.scrollIntoView({ behavior: "smooth" });
 });
+
+// ---- pHexC : conversion dans les deux sens, en direct ----
+function convertir(source) {
+  const [de, vers] = source === "ph" ? ["x-ph", "x-c"] : ["x-c", "x-ph"];
+  const brut = $(de).value.trim();
+  const n = Number(brut.replace(/\s/g, "").replace(",", "."));
+  const msg = $("r-phexc");
+  $(de).classList.remove("invalide");
+  if (brut === "") { $(vers).value = ""; msg.innerHTML = ""; return; }
+  if (!Number.isFinite(n)) { $(de).classList.add("invalide"); $(vers).value = ""; msg.innerHTML = ""; return; }
+  const ph = source === "ph" ? n : phDepuisC(n);
+  if (ph === null) {
+    $(vers).value = "";
+    msg.innerHTML = `<div class="msg err">Valeur de C hors de la plage calculable.</div>`;
+    return;
+  }
+  $(vers).value = source === "ph"
+    ? cDepuisPh(n).toLocaleString("fr-FR", { maximumFractionDigits: 3 })
+    : ph.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  msg.innerHTML = ph < 8.2 || ph > 11.3
+    ? `<div class="msg warn">pH hors de la plage habituelle (8,2 – 11,3) : résultat approximatif.</div>` : "";
+}
+$("x-ph").addEventListener("input", () => convertir("ph"));
+$("x-c").addEventListener("input", () => convertir("c"));
+convertir("ph");
 
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
 </script>
